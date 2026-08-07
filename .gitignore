@@ -1,5 +1,6 @@
 # local reference, not a deliverable
 BRIEF.md
+GUIA-ARRANQUE.md
 
 .venv/
 __pycache__/
