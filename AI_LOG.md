@@ -31,7 +31,7 @@ and log together.
 | # | Transcript | Focus | Outcome |
 |---|---|---|---|
 | 01 | [`ai-log/01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract | 7 decisions (D1–D7), all schema/migration/package layout — see file |
-| 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | D8 + a real identity-map bug caught via curl, not code review — see file |
+| 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | D8-D11, an identity-map bug caught via curl, a reviewed-not-buggy concurrency question, and 30 new automated tests — see file |
 | 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states | _(not started)_ |
 | 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | _(not started)_ |
 

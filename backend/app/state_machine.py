@@ -7,33 +7,19 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import selectinload
 
+from app.constants import SUBMIT_DETAILS_LEGAL_FROM, VALIDATE_CLAIMABLE_FROM
 from app.exceptions import NotFoundError, TransitionError
-from app.models import ItemRow, SessionRow, SessionStatus, ValidationLogRow, ValidationOutcome
-from app.provider_schemas import (
-    ProviderInvalid,
-    ProviderPartial,
-    ProviderResult,
-    ProviderUnavailable,
-    ProviderValid,
-)
+from app.models import ItemRow, SessionRow, SessionStatus, ValidationLogRow
+from app.provider_result_handlers import RESULT_HANDLERS
+from app.provider_schemas import ProviderResult
 from app.schemas import DetailsIn
-
-_DETAILS_LEGAL_FROM = (SessionStatus.DRAFT, SessionStatus.DETAILS_OK, SessionStatus.INVALID)
-_VALIDATE_CLAIMABLE_FROM = (SessionStatus.DETAILS_OK, SessionStatus.UNAVAILABLE)
 
 
 def _get_or_404(db: DBSession, session_id: uuid.UUID) -> SessionRow:
-    # selectinload: this session's items are read after the ORM session that loaded it
-    # closes (see routers/sessions.py's validate handler) — without eager loading here,
-    # accessing .items on a detached instance would raise DetachedInstanceError.
-    #
-    # populate_existing: apply_validation_result calls _get_or_404 twice in the same DB
-    # session — once before mutating items, once after committing the mutation. Without
-    # this, SQLAlchemy's identity map returns the second call's SessionRow with its
-    # *already-loaded* items collection from the first call, silently stale even though
-    # the scalar columns (status, etc.) do refresh. Caught by curl showing items: [] on
-    # POST /validate immediately followed by a GET on the same session showing the real
-    # items — same DB row, two different responses.
+    # selectinload: caller's DB session may close before serialization (routers/sessions.py's
+    # validate handler) — without eager loading, accessing .items would raise DetachedInstanceError.
+    # populate_existing: forces a fresh read so a 2nd call in the same session doesn't return
+    # items stale from the 1st (bug + repro in ai-log/02-backend.md).
     session = db.execute(
         select(SessionRow)
         .where(SessionRow.id == session_id)
@@ -47,7 +33,7 @@ def _get_or_404(db: DBSession, session_id: uuid.UUID) -> SessionRow:
 
 def submit_details(db: DBSession, session_id: uuid.UUID, payload: DetailsIn) -> SessionRow:
     session = _get_or_404(db, session_id)
-    if session.status not in _DETAILS_LEGAL_FROM:
+    if session.status not in SUBMIT_DETAILS_LEGAL_FROM:
         raise TransitionError(f"Cannot submit details while status is {session.status.value}")
 
     session.company_name = payload.company_name
@@ -69,7 +55,7 @@ def claim_validation(db: DBSession, session_id: uuid.UUID) -> tuple[SessionRow, 
     """
     result = db.execute(
         update(SessionRow)
-        .where(SessionRow.id == session_id, SessionRow.status.in_(_VALIDATE_CLAIMABLE_FROM))
+        .where(SessionRow.id == session_id, SessionRow.status.in_(VALIDATE_CLAIMABLE_FROM))
         .values(status=SessionStatus.VALIDATING, last_error=None)
         .returning(SessionRow.id)
     )
@@ -87,29 +73,14 @@ def apply_validation_result(db: DBSession, session_id: uuid.UUID, result: Provid
     if session.status != SessionStatus.VALIDATING:
         raise TransitionError(f"Cannot apply validation result while status is {session.status.value}")
 
-    if isinstance(result, (ProviderValid, ProviderPartial)):
-        session.status = SessionStatus.VALIDATED
-        session.warnings = result.warnings if isinstance(result, ProviderPartial) else []
-        session.last_error = None
-        outcome = ValidationOutcome.PARTIAL if isinstance(result, ProviderPartial) else ValidationOutcome.VALID
-        detail = None
+    handler = RESULT_HANDLERS[type(result)]
+    session.status, session.warnings, outcome, detail, items = handler(result)
+    session.last_error = detail
+    if items is not None:
         db.execute(delete(ItemRow).where(ItemRow.session_id == session_id))
-        for item in result.items:
+        
+        for item in items:
             db.add(ItemRow(session_id=session_id, external_id=item.id, name=item.name))
-    elif isinstance(result, ProviderInvalid):
-        session.status = SessionStatus.INVALID
-        session.warnings = []
-        session.last_error = result.reason
-        outcome = ValidationOutcome.INVALID
-        detail = result.reason
-    elif isinstance(result, ProviderUnavailable):
-        session.status = SessionStatus.UNAVAILABLE
-        session.warnings = []
-        session.last_error = result.detail
-        outcome = ValidationOutcome.UNAVAILABLE
-        detail = result.detail
-    else:
-        raise AssertionError(f"Unhandled ProviderResult variant: {result!r}")
 
     db.add(ValidationLogRow(session_id=session_id, outcome=outcome, detail=detail))
     db.commit()
