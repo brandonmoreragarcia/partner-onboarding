@@ -10,12 +10,17 @@ whatever step the backend says the partner is on.
 
 ## Stack, and why
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Backend | Python · FastAPI · SQLAlchemy · Alembic | _(fill in — the brief allows the strongest stack; state why this shows better judgment than a struggling Node slice)_ |
-| DB | PostgreSQL | Required. Migrations via Alembic. |
-| Frontend | React · Vite · TypeScript · TanStack Query | _(fill in — server state belongs in a query cache, which is what makes resume trivial)_ |
-| Contract | OpenAPI → `openapi-typescript` | Frontend types are generated from the backend schema, never hand-written. |
+| Layer | Choice | Version (developed/tested against) | Reason |
+|---|---|---|---|
+| Backend | Python · FastAPI · SQLAlchemy · Alembic | Python 3.14.6 · FastAPI 0.141.1 · SQLAlchemy 2.0.51 · Alembic 1.19.0 | _(fill in — the brief allows the strongest stack; state why this shows better judgment than a struggling Node slice)_ |
+| DB | PostgreSQL | 16.14 (Homebrew, local) | Required. Migrations via Alembic. |
+| Frontend | React · Vite · TypeScript · TanStack Query | _pinned once scaffolded in Phase 4_ | _(fill in — server state belongs in a query cache, which is what makes resume trivial)_ |
+| Contract | OpenAPI → `openapi-typescript` | | Frontend types are generated from the backend schema, never hand-written. |
+
+Full pinned backend dependency list (exact, not ranges — reproducibility matters more than staying
+on latest for a take-home): [`backend/requirements.txt`](./backend/requirements.txt). Key ones:
+`fastapi==0.141.1`, `sqlalchemy==2.0.51`, `alembic==1.19.0`, `pydantic==2.13.4`,
+`pydantic-settings==2.15.0`, `psycopg[binary]==3.3.4`, `httpx==0.28.1`.
 
 ---
 
@@ -23,14 +28,19 @@ whatever step the backend says the partner is on.
 
 ### Prerequisites
 
-- Python 3.12+
-- Node 20+
-- PostgreSQL 15+ running locally
+- Python 3.12+ (developed/tested on 3.14.6)
+- Node 20+ (frontend not yet scaffolded — exact version to be pinned in Phase 4)
+- PostgreSQL 15+ running locally (developed/tested on 16.14, installed via `brew install postgresql@16`)
 
 ### 1. Database
 
 ```bash
+# if installed via Homebrew, its bin dir isn't on PATH by default:
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+
+brew services start postgresql@16   # if not already running
 createdb partner_onboarding
+createdb partner_onboarding_test    # used by the backend test suite, see Tests below
 ```
 
 ### 2. Backend
@@ -150,6 +160,10 @@ _(fill in)_
 - **Real Provider integration** — mock only, per the brief.
 - **Docker / CI / deployment** — out of scope; local run only.
 - **Visual polish** — minimal styling on purpose; function over form.
+- **Surfacing validation attempt history in the UI** — every `validate` call writes an insert-only
+  row to `validation_log` (outcome, detail, timestamp), but no endpoint reads it yet. Kept it
+  write-only rather than building the read side, since the brief doesn't ask for it; the schema is
+  already there if time allows a "last 3 attempts" panel.
 - _(fill in the ones you actually hit: e.g. credential encryption at rest, concurrent-session handling, background job for validation, pagination of items, structured logging/observability)_
 
 For each of the above I noted _why_ it was safe to skip inside a 4–6 hour budget rather than
@@ -161,7 +175,8 @@ silently omitting it.
 
 _(3–5 concrete items, in priority order. This shows you know what "done" would look like.)_
 
-1.
+1. A `GET /sessions/{id}/validation-log` (or embed the last N in `GET /sessions/{id}`) endpoint plus
+   a small UI panel — the data already exists in `validation_log`, this is a read path away.
 2.
 3.
 
@@ -170,11 +185,17 @@ _(3–5 concrete items, in priority order. This shows you know what "done" would
 ## Tests
 
 ```bash
-cd backend && pytest              # state machine, idempotency, Provider failure modes
+cd backend && pytest              # requires partner_onboarding_test DB, see step 1 above
 cd frontend && npx playwright test  # happy path + resume-after-reload
 ```
 
-What is covered and why:
+**Current state (Phase 1):** `backend/tests/test_schema.py` — 6 tests against a real Postgres DB
+covering DB-level defaults and constraints (CHECK on `status`/`outcome`, `UNIQUE` on `partner_id`
+and `(session_id, external_id)`, cascade delete). State machine transitions, idempotency, and
+Provider failure-mode tests land in Phase 2/5 once `state_machine.py` and the routes exist — this
+line will be updated as they're added rather than left describing tests that don't exist yet.
+
+What the full suite is covered and why once complete:
 
 - **State machine** — legal transitions succeed, illegal ones return `409`.
 - **Idempotency** — submitting a step twice and calling go-live twice do not duplicate or corrupt.

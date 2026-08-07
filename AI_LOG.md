@@ -30,53 +30,19 @@ and log together.
 
 | # | Transcript | Focus | Outcome |
 |---|---|---|---|
-| 01 | [`ai-log/01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract | _(fill in)_ |
-| 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | _(fill in)_ |
-| 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states | _(fill in)_ |
-| 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | _(fill in)_ |
+| 01 | [`ai-log/01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract | 7 decisions (D1–D7), all schema/migration/package layout — see file |
+| 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | _(not started)_ |
+| 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states | _(not started)_ |
+| 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | _(not started)_ |
 
 ---
 
 ## Decision log
 
-> One entry per notable moment. Keep them short and honest — including the ones where I was wrong.
-> Tag each as **accepted / rejected / redirected**. Delete this instruction block before submitting.
-
-### D1 — Backend stack: Python instead of Node · _redirected_
-
-**Context.** The brief prefers Node/TypeScript.
-
-**What the AI proposed.** _(fill in)_
-
-**What I decided.** Python + FastAPI, because it is where I can show senior-level judgment inside a
-4–6h budget, and the brief explicitly allows the strongest stack. Type safety across the stack is
-preserved by generating frontend types from the OpenAPI schema rather than hand-writing them.
-
-**Why it matters.** _(fill in)_
-
----
-
-### D2 — _(title)_ · _accepted / rejected / redirected_
-
-**Context.**
-
-**What the AI proposed.**
-
-**What I did.**
-
-**Why.**
-
----
-
-### D3 — _(title)_ · _accepted / rejected / redirected_
-
-**Context.**
-
-**What the AI proposed.**
-
-**What I did.**
-
-**Why.**
+> The full per-decision log (Context / what the AI proposed / what I did / why) lives in each
+> phase's own file under [`ai-log/`](./ai-log), not here — see the Session index above. Keeping it
+> per-phase instead of centralized here so this file stays a lean index as more phases land.
+> Tag each entry as **accepted / rejected / redirected**.
 
 ---
 
