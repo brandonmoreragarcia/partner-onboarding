@@ -2,6 +2,9 @@
 
 Project rules for AI-assisted work on this repo. Read this before writing any code.
 
+The full assignment — requirements, deliverables and evaluation criteria — is in `BRIEF.md`
+(local, gitignored). Read it when a question is about *what is required* rather than *how we build it*.
+
 ---
 
 ## 1. What we are building
@@ -63,12 +66,14 @@ VALIDATING ──503/timeout─────────> UNAVAILABLE ──retry
 - Mutations call `invalidateQueries` on success; do not optimistically advance the step.
 - Disable submit/retry controls while a mutation or validation is in flight.
 - All five validation states are visibly distinct: `pending`, `valid`, `partial`, `invalid`, `unavailable`.
+- components with custom hooks where the logic lives in the hooks, not the components.
 
 **General**
 
 - No dependency gets added without a reason that can be stated in one sentence.
 - No speculative abstraction, no features outside the brief. Out of scope: auth, real integrations, Docker/K8s, CI, visual polish.
 - Small, focused commits. Typecheck + tests green before moving to the next feature.
+- code should be divided into smaller, more manageable files and components, lets do the one file per feature approach.
 
 ## 6. Mock Provider
 

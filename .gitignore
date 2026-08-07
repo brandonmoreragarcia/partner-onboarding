@@ -1,8 +1,12 @@
+# local reference, not a deliverable
+BRIEF.md
+
 .venv/
 __pycache__/
+*.pyc
 node_modules/
 dist/
 .env
-*.pyc
 .playwright/
 test-results/
+playwright-report/
