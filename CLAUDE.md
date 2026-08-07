@@ -74,6 +74,7 @@ VALIDATING ──503/timeout─────────> UNAVAILABLE ──retry
 - No dependency gets added without a reason that can be stated in one sentence.
 - No speculative abstraction, no features outside the brief. Out of scope: auth, real integrations, Docker/K8s, CI, visual polish.
 - Small, focused commits. Typecheck + tests green before moving to the next feature.
+- Each phase gets its own branch (e.g. `phase-1-schema-design`). When the phase is done, merge directly into `main` and push — no pull request. This is a solo take-home; PR review overhead doesn't apply here.
 - code should be divided into smaller, more manageable files and components, lets do the one file per feature approach.
 
 ## 6. Mock Provider
