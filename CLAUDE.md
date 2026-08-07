@@ -75,6 +75,7 @@ VALIDATING ──503/timeout─────────> UNAVAILABLE ──retry
 - No speculative abstraction, no features outside the brief. Out of scope: auth, real integrations, Docker/K8s, CI, visual polish.
 - Small, focused commits. Typecheck + tests green before moving to the next feature.
 - Each phase gets its own branch (e.g. `phase-1-schema-design`). When the phase is done, merge directly into `main` and push — no pull request. This is a solo take-home; PR review overhead doesn't apply here.
+- **"Move to phase X" is not authorization to commit phase X.** Wait for an explicit go-ahead before committing/merging each phase's work, even once the branch-per-phase workflow above is established — ask again each time rather than assuming continued license from an earlier "commit and push."
 - code should be divided into smaller, more manageable files and components, lets do the one file per feature approach.
 
 ## 6. Mock Provider

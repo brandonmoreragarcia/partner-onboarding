@@ -31,7 +31,7 @@ and log together.
 | # | Transcript | Focus | Outcome |
 |---|---|---|---|
 | 01 | [`ai-log/01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract | 7 decisions (D1–D7), all schema/migration/package layout — see file |
-| 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | _(not started)_ |
+| 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | D9-D11 (code review pass), a reviewed-not-buggy concurrency question, and 30 new automated tests — see file |
 | 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states | _(not started)_ |
 | 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | _(not started)_ |
 
