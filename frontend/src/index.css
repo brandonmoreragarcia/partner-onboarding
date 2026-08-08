@@ -1,0 +1,231 @@
+/* Design tokens + component classes lifted from the "Industry" design system
+   (design_handoff_partner_onboarding/_ds/.../styles.css) — values only, not the file itself.
+   No dark mode: excluded per the handoff's stated fidelity ("function over form"). */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&family=Barlow+Condensed:wght@400;600&display=swap');
+
+:root {
+  --color-bg: #f2f2f3;
+  --color-surface: #e9e9ea;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+
+  --color-neutral-100: #f5f5f8;
+  --color-neutral-400: #b7b7ba;
+  --color-neutral-500: #98989b;
+  --color-neutral-800: #424244;
+
+  --color-accent-100: #eef6ff;
+  --color-accent-600: #597ea3;
+  --color-accent-700: #416180;
+  --color-accent-800: #2c455d;
+
+  --font-heading: "Barlow Condensed", system-ui, sans-serif;
+  --font-heading-weight: 600;
+  --font-body: "Barlow", system-ui, sans-serif;
+
+  --space-1: 3.4px;
+  --space-2: 6.8px;
+  --space-3: 10.2px;
+  --space-4: 13.6px;
+  --space-6: 20.4px;
+  --space-8: 27.2px;
+
+  --radius-md: 4px;
+
+  /* Status roles: state signalling, not decoration — see README "Status colours". */
+  --st: #5980a6;
+  --st-tint: #eef6ff;
+  --st-deep: #416180;
+}
+
+.st-wait { --st: #5980a6; --st-tint: #eef6ff; --st-deep: #416180; }
+.st-ok   { --st: #5b8f6b; --st-tint: #e9f2eb; --st-deep: #3c5f47; }
+.st-warn { --st: #b3862f; --st-tint: #f6efdf; --st-deep: #6f5119; }
+.st-err  { --st: #a85a52; --st-tint: #f6e9e7; --st-deep: #6b322c; }
+.st-none { --st: #7a7a7d; --st-tint: #f5f5f8; --st-deep: #424244; }
+
+* , *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-2);
+}
+h3 { font-size: 25px; }
+h4 { font-size: 20px; }
+h6 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+
+/* — app shell — */
+.screen {
+  padding: 56px 24px;
+  border-bottom: 1px solid var(--color-divider);
+}
+.screen-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid var(--color-divider);
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: 0;
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); border-color: var(--color-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-600); }
+.btn-primary:active:not(:disabled) { background: var(--color-accent-700); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); border-color: transparent; }
+.btn-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active:not(:disabled) { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+
+/* — blueprint frame: hairline registration marks at each corner — */
+.blueprint { position: relative; }
+.blueprint > .corner {
+  position: absolute; width: 11px; height: 11px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.blueprint > .corner::before, .blueprint > .corner::after {
+  content: ""; position: absolute; background: currentColor;
+}
+.blueprint > .corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+.blueprint > .corner::after  { top: 5px; left: 0; width: 100%; height: 1px; }
+.blueprint > .corner.tl { top: -6px; left: -6px; }
+.blueprint > .corner.tr { top: -6px; right: -6px; }
+.blueprint > .corner.bl { bottom: -6px; left: -6px; }
+.blueprint > .corner.br { bottom: -6px; right: -6px; }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: 0;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+.input:disabled { opacity: 0.7; }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px; border-radius: 0;
+}
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--st); color: var(--st-deep); background: var(--st-tint); }
+
+/* — item / row list — */
+.row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--color-divider);
+}
+.row:last-child { border-bottom: none; }
+
+/* — key/value summary — */
+.kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; font-size: 14px; padding: 10px 14px; }
+.kv dt { color: color-mix(in srgb, var(--color-text) 55%, transparent); margin: 0; }
+.kv dd { margin: 0; }
+
+/* — stepper — */
+.eyebrow {
+  font-family: var(--font-body); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-accent); margin-bottom: var(--space-4);
+}
+.stepper { display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-8); }
+.stepper-line { flex: 1; height: 1px; background: var(--color-divider); }
+.step { display: flex; align-items: center; gap: 8px; }
+.step-num {
+  width: 22px; height: 22px; flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 600; font-size: 11px;
+}
+.step-done { background: #5b8f6b; color: var(--color-bg); }
+.step-todo { border: 1.5px solid var(--color-neutral-400); color: var(--color-neutral-500); }
+.step-now { border: 1.5px solid var(--st); color: var(--st-deep); background: var(--st-tint); }
+.step-label { font-size: 13px; }
+.step-label-current { font-weight: 600; }
+.step-label-todo { color: var(--color-neutral-500); }
+
+/* — status panel + tag — */
+.head-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6); }
+.head-row h3 { margin: 0; }
+.status-tag {
+  display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 3px 9px; border: 1px solid var(--st);
+  background: var(--st-tint); color: var(--st-deep);
+}
+.panel {
+  position: relative; border: 1px solid var(--color-divider); border-left: 3px solid var(--st);
+  background: var(--st-tint); padding: var(--space-6); display: flex; gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.panel svg { color: var(--st-deep); flex: none; }
+.panel-title {
+  font-family: var(--font-heading); font-weight: 600; font-size: 16px;
+  margin-bottom: 2px; color: var(--st-deep);
+}
+.panel-body { font-size: 13px; opacity: 0.75; margin: 0; }
+.panel-note { font-size: 12px; opacity: 0.55; margin: 4px 0 0; }
+
+/* — warnings block — */
+.warnings-block {
+  border: 1px solid var(--color-divider); border-left: 3px solid var(--st);
+  background: var(--st-tint); padding: 10px 14px; margin-bottom: var(--space-6);
+}
+.warnings-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--st-deep); margin-bottom: 4px;
+}
+.warnings-block p { font-size: 13px; margin: 0; color: var(--st-deep); }
+
+/* — bordered list frame (items, company summary) — */
+.frame { border: 1px solid var(--color-divider); margin-bottom: var(--space-6); }
+
+/* — layout helpers (replace inline styles) — */
+.instruction-text { font-size: 14px; margin-bottom: var(--space-6); }
+.details-form { display: grid; gap: var(--space-4); }
+.form-submit-btn { justify-self: start; margin-top: var(--space-2); }
+.field-row { display: flex; gap: var(--space-3); margin-bottom: var(--space-6); }
+.field-row .field { flex: 1; }
+.section-label { color: var(--color-accent); margin-bottom: var(--space-2); }
+.frame-padded { padding-inline: var(--space-4); }
+.kv-divider { border-top: 1px solid var(--color-divider); }
+.panel-centered { align-items: center; }
+.panel-title-lg { font-size: 20px; }
+
+/* — dev-only tooling, deliberately not styled like a product control — */
+.dev-reset-btn {
+  position: fixed; top: 12px; right: 12px; z-index: 999;
+  font-family: monospace; font-size: 11px; cursor: pointer;
+  padding: 4px 8px; background: #fff; color: #000; border: 1px dashed #000;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dev-reset-btn:hover:not(:disabled) { background: #000; color: #fff; }
+.dev-reset-btn:disabled { opacity: 0.5; cursor: not-allowed; }

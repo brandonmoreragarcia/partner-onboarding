@@ -1,0 +1,11 @@
+export const HEADING_TEXT = "Review & go live";
+export const INSTRUCTION_TEXT = "Confirm your details and the items to activate. Nothing is live until you go live.";
+export const COMPANY_SECTION_TITLE = "Company";
+export const ITEMS_SECTION_TITLE = "Items to activate";
+export const COMPANY_NAME_LABEL = "Company name";
+export const ACCOUNT_ID_LABEL = "Account ID";
+export const API_KEY_LABEL = "API key";
+export const API_KEY_MASK = "••••••••••••";
+export const WARNINGS_TITLE = "Warnings";
+export const LABEL_GO_LIVE = "Go live";
+export const LABEL_GOING_LIVE = "Going live…";

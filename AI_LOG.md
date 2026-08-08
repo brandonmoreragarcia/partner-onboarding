@@ -32,7 +32,7 @@ and log together.
 |---|---|---|---|
 | 01 | [`ai-log/01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract | 7 decisions (D1–D7), all schema/migration/package layout — see file |
 | 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | D9-D11 (code review pass), a reviewed-not-buggy concurrency question, and 30 new automated tests — see file |
-| 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states | _(not started)_ |
+| 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states, design handoff, code review | D12-D17, a CORS bug caught only by opening a real browser, a schema fix (ErrorResponse), and the first Playwright e2e test — see file |
 | 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | _(not started)_ |
 
 ---
@@ -51,15 +51,36 @@ and log together.
 > The section the brief asks for explicitly. Be specific: what exactly was wrong, how I noticed,
 > what I did. Vague entries are worth nothing here.
 
-**1. _(fill in)_**
-- What it produced:
-- How I noticed:
-- Fix:
+**1. `validate` response showed stale (empty) `items` despite the DB being correct**
+- What it produced: `apply_validation_result` loaded the session with items eagerly loaded via
+  `selectinload` *before* mutating the items table, then re-loaded it *after* committing — but
+  SQLAlchemy's identity map returned the same cached collection instead of the fresh one. The
+  `POST /validate` response showed `items: []` right after a successful `valid-key` validation,
+  while a `GET` immediately after on the same session showed the real 2 items.
+- How I noticed (the AI, during its own verification pass — not caught by me first): curl'd the
+  live endpoint after implementing it, per the "reproduce before fixing" rule in CLAUDE.md, rather
+  than trusting that reading the code back was enough.
+- Fix: `.execution_options(populate_existing=True)` on the re-fetch query. Full repro script and
+  before/after output in `ai-log/02-backend.md`.
 
-**2. _(fill in)_**
-- What it produced:
-- How I noticed:
-- Fix:
+**2. API contract allowed `validate` from `INVALID` directly, contradicting the state diagram**
+- What it produced: Phase 1's first design pass listed `validate` as claimable from
+  `DETAILS_OK, INVALID, UNAVAILABLE` — but CLAUDE.md §4's diagram only draws `INVALID -> DETAILS_OK`
+  (via corrected details), never `INVALID -> VALIDATING` directly.
+- How I noticed (the AI, cross-checking its own design doc against the diagram before building the
+  ERD walkthrough): re-reading §4 while drawing the state diagram for the walkthrough artifact.
+- Fix: corrected `claim_validation`'s claimable states before any route code existed, so it never
+  shipped as a bug. Confirmed live in Phase 2 verification: `validate` from `INVALID` now returns
+  `409`.
+
+**3. Backend had no CORS configuration — app looked completely broken in a real browser**
+- What it produced: the frontend rendered nothing past "Loading..." on first real-browser test.
+  Every request from the Vite dev server to the API was silently blocked by the browser's CORS
+  policy; no server-side error, no stack trace, just a network failure the type-checker and unit
+  tests would never catch.
+- How I noticed (the AI): opened the app in an actual Playwright-driven browser instead of stopping
+  at `tsc` passing — console/network error listeners on the page caught the CORS rejection directly.
+- Fix: added `CORSMiddleware` to `backend/app/main.py`, scoped to the known dev origin.
 
 ---
 
