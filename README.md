@@ -1,10 +1,14 @@
 # Partner Onboarding — Vertical Slice
 
 A resumable 3-step self-service onboarding wizard: a partner submits their details, validates their
-external Provider integration, and goes live. Backend owns the session state; the frontend renders
-whatever step the backend says the partner is on.
+external Provider integration, and goes live. The backend owns all session state — the frontend
+just reads `status` from the API and renders whatever step that implies. Reload, close the tab,
+restart the server — the partner resumes exactly where they left off, because nothing about
+progress lives in the browser.
 
-> _(One paragraph here at the end: what actually works, in plain terms.)_
+- **Details** — company name + Provider credentials (`accountId`, `apiKey`).
+- **Validate integration** — backend calls a mock Provider, persists the result and returned items.
+- **Review & go live** — partner reviews and finalizes; the session becomes `LIVE`.
 
 ---
 
@@ -12,10 +16,10 @@ whatever step the backend says the partner is on.
 
 | Layer | Choice | Version (developed/tested against) | Reason |
 |---|---|---|---|
-| Backend | Python · FastAPI · SQLAlchemy · Alembic | Python 3.14.6 · FastAPI 0.141.1 · SQLAlchemy 2.0.51 · Alembic 1.19.0 | _(fill in — the brief allows the strongest stack; state why this shows better judgment than a struggling Node slice)_ |
-| DB | PostgreSQL | 16.14 (Homebrew, local) | Required. Migrations via Alembic. |
-| Frontend | React · Vite · TypeScript · TanStack Query | _pinned once scaffolded in Phase 4_ | _(fill in — server state belongs in a query cache, which is what makes resume trivial)_ |
-| Contract | OpenAPI → `openapi-typescript` | | Frontend types are generated from the backend schema, never hand-written. |
+| Backend | Python · FastAPI · SQLAlchemy · Alembic | Python 3.14.6 · FastAPI 0.141.1 · SQLAlchemy 2.0.51 · Alembic 1.19.0 | The brief allows the strongest stack over the suggested Node one. FastAPI + Pydantic gives request/response validation and an OpenAPI schema for free, which the frontend's types are generated from — a struggling Node slice would have cost more time than it saved on "familiarity." |
+| DB | PostgreSQL | 16.14 (Homebrew, local) | Required by the brief. Migrations via Alembic. |
+| Frontend | React · Vite · TypeScript · TanStack Query | React 19.2.8 · Vite 8.2 · TypeScript 6.0.2 · TanStack Query 5.101 | Server state (the session) belongs in a query cache, not component state — that's what makes "resume on reload" nearly free instead of something to hand-build. |
+| Contract | OpenAPI → `openapi-typescript` | openapi-typescript 7.13 | Frontend types generated from the backend's own schema — never hand-written, so the two sides can't silently drift apart. |
 
 Full pinned backend dependency list (exact, not ranges — reproducibility matters more than staying
 on latest for a take-home): [`backend/requirements.txt`](./backend/requirements.txt). Key ones:
@@ -26,24 +30,19 @@ on latest for a take-home): [`backend/requirements.txt`](./backend/requirements.
 
 ## Running it locally
 
-### Prerequisites
+**Prerequisites:** Python 3.12+ (tested on 3.14.6) · Node 20+ (tested on 24.18) · PostgreSQL 15+
+(tested on 16.14, `brew install postgresql@16`)
 
-- Python 3.12+ (developed/tested on 3.14.6)
-- Node 20+ (frontend not yet scaffolded — exact version to be pinned in Phase 4)
-- PostgreSQL 15+ running locally (developed/tested on 16.14, installed via `brew install postgresql@16`)
-
-### 1. Database
+**1. Database**
 
 ```bash
-# if installed via Homebrew, its bin dir isn't on PATH by default:
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-
-brew services start postgresql@16   # if not already running
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"   # if installed via Homebrew
+brew services start postgresql@16                          # if not already running
 createdb partner_onboarding
 createdb partner_onboarding_test    # used by the backend test suite, see Tests below
 ```
 
-### 2. Backend
+**2. Backend**
 
 ```bash
 cd backend
@@ -54,7 +53,7 @@ alembic upgrade head
 uvicorn app.main:app --reload  # http://localhost:8000
 ```
 
-### 3. Frontend
+**3. Frontend**
 
 ```bash
 cd frontend
@@ -62,13 +61,22 @@ npm install
 npm run dev                    # http://localhost:5173
 ```
 
-### Environment variables
+## Tests
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `DATABASE_URL` | `postgresql://localhost/partner_onboarding` | Postgres connection |
-| `PROVIDER_TIMEOUT_SECONDS` | `5` | Timeout for the Provider call |
-| `PARTNER_ID` | `demo-partner` | Hardcoded identity (auth is out of scope) |
+```bash
+cd backend && pytest                # requires partner_onboarding_test DB, see step 1 above
+cd frontend && npx playwright test  # requires the backend running separately on :8000
+```
+
+
+**Environment variables**
+
+| Variable | Where | Default | Purpose |
+|---|---|---|---|
+| `DATABASE_URL` | `backend/.env` | `postgresql+psycopg://localhost/partner_onboarding` | Postgres connection (`+psycopg` selects psycopg3, matching `requirements.txt`) |
+| `PROVIDER_TIMEOUT_SECONDS` | `backend/.env` | `5` | Timeout for the Provider call |
+| `PARTNER_ID` | `backend/.env` | `demo-partner` | Hardcoded identity (auth is out of scope) |
+| `VITE_API_BASE_URL` | `frontend/.env` (optional) | `http://localhost:8000` | Only needed if the backend isn't on the default host/port |
 
 ---
 
@@ -76,14 +84,14 @@ npm run dev                    # http://localhost:5173
 
 The mock Provider is driven by magic `apiKey` values, so every path can be reproduced from the UI:
 
-| `apiKey` | Provider responds | What the app should do |
+| `apiKey` | Provider responds | What the app does |
 |---|---|---|
 | `valid-key` | `200 valid` + items | Items persisted, partner can advance |
 | `partial-key` | `200 partial` + items + warnings | Warnings surfaced, partner chooses whether to continue |
 | `invalid-key` | `200 invalid` + reason | Reason shown, partner returns to step 1 to correct credentials |
 | `timeout-key` | `503` / timeout | Treated as transient; retry button; session state untouched |
 
-Any other value behaves like `valid-key`. _(Adjust if you change this.)_
+Any other value behaves like `valid-key`.
 
 ---
 
@@ -99,7 +107,7 @@ Any other value behaves like `valid-key`. _(Adjust if you change this.)_
 
 Interactive docs at `http://localhost:8000/docs`.
 
-### Session states
+**Session states**
 
 ```
 DRAFT → DETAILS_OK → VALIDATING → VALIDATED → LIVE
@@ -114,100 +122,111 @@ transition is not legal from that state.
 
 ## Assumptions
 
-> _Explicit assumptions I made where the brief left room. Stating these is part of the deliverable._
-
 - **A single trusted partner.** Auth is out of scope, so the partner identity is hardcoded
   (`PARTNER_ID`) and one onboarding session belongs to it.
 - **One active session per partner.** `POST /sessions` returns the existing in-progress session
-  rather than creating a second one. _(Adjust if you decide otherwise.)_
-- **Credentials are stored as provided.** No encryption at rest — noted as deferred below rather
-  than half-implemented.
+  rather than creating a second one.
+- **Credentials are stored as provided.** No encryption at rest — noted under Deferred rather than
+  half-implemented.
 - **The Provider is the source of truth for items**; we persist a snapshot from the last successful
-  validation, we do not reconcile continuously.
-- _(fill in any others you hit while building)_
+  validation rather than reconciling continuously.
+- **`partial` items are still items.** A `partial` result's warnings flag specific items as
+  suspect but don't exclude them — everything the Provider returns gets persisted and counted, and
+  the partner decides whether to go live anyway. Silently dropping flagged items would be inventing
+  behavior the Provider contract doesn't specify.
 
 ---
 
 ## Design decisions & trade-offs
 
-> _The section they actually read. Explain the "why", including what you gave up._
+**Backend owns the step; the client never does.** The frontend has no step counter, no
+localStorage, no local flow state — it renders entirely off `status` from `GET /sessions/{id}`.
+This is what makes resume-on-reload correct by construction instead of something to synchronize:
+there's only one source of truth to get right. The cost is an extra round-trip on load compared to
+optimistically rendering a locally-remembered step.
 
-**Backend owns the step; the client never does.**
-_(fill in — what this buys, what it costs in round-trips)_
+**Idempotency via conditional updates, not an idempotency-key header.** Duplicate `validate` or
+`go-live` calls are handled with a conditional `UPDATE ... WHERE status = X ... RETURNING`: if the
+row wasn't in the expected state, zero rows are affected and the caller gets back the current
+session instead of an error (when the current state is the target state) or a `409` (when it
+isn't). This piggybacks on the state machine that already has to exist, versus a separate
+idempotency-key table that would duplicate that logic for no real benefit at this scope.
 
-**Idempotency approach.**
-_(fill in — how duplicate submits and duplicate go-live are handled, and why you chose this over an idempotency-key header / upsert / other)_
+**`invalid` and `unavailable` are separate states, not a shared "error" bucket.** They imply
+opposite actions: `invalid` means the credentials are wrong and the partner must go back and
+correct them; `unavailable` means the same credentials are safe to retry as-is. Collapsing them
+would either block a retryable case or invite resubmitting bad credentials.
 
-**`invalid` vs `unavailable` are separate states.**
-_(fill in — why collapsing them into "error" would be wrong for the user and for retries)_
+**The Provider call happens outside any DB transaction.** `validate`'s route handler deliberately
+opens two separate, short-lived DB sessions with the Provider HTTP call in between holding no DB
+connection at all. A slow or hanging Provider call would otherwise hold a transaction (and a
+connection) open for the duration — under load that's how a slow third party takes the whole app's
+connection pool down with it.
 
-**The Provider call happens outside the DB transaction.**
-_(fill in — why holding a transaction across a slow HTTP call is a problem)_
+**Types generated from the OpenAPI schema, not a shared package or hand-written DTOs.** FastAPI
+already produces the schema for free from its own Pydantic models; `openapi-typescript` turns that
+into frontend types with no duplication and no drift window. The trade-off is a manual regeneration
+step (`npm run generate:api`) after backend schema changes, versus the build-tooling overhead a
+shared monorepo package would add for two workspaces this small.
 
-**Type safety across the boundary.**
-_(fill in — generated types vs shared package vs hand-written DTOs, and the trade-off you accepted)_
-
-**State stored as a single status column vs an event log.**
-_(fill in)_
+**A single `status` column, not an event log.** The brief's own state diagram is a fixed 7-value
+machine, and every requirement (resumability, idempotency, `409` on illegal transitions) is
+expressible as "read current status, conditionally update it." An event-sourced log would add
+replay logic this scope never asked for. The one thing an event log would have made easier —
+distinguishing `valid` from `partial` at the same `VALIDATED` status — is instead recovered from
+the `warnings` column, which is documented as a deliberate compromise rather than silently reusing
+one field for two meanings.
 
 ---
 
 ## Deliberately deferred
-
-> Naming these is worth more than half-building them.
-
-- **Auth / login** — out of scope per the brief; a hardcoded partner identity is used.
-- **Real Provider integration** — mock only, per the brief.
-- **Docker / CI / deployment** — out of scope; local run only.
-- **Visual polish** — minimal styling on purpose; function over form.
 - **Surfacing validation attempt history in the UI** — every `validate` call writes an insert-only
   row to `validation_log` (outcome, detail, timestamp), but no endpoint reads it yet. Kept it
   write-only rather than building the read side, since the brief doesn't ask for it; the schema is
   already there if time allows a "last 3 attempts" panel.
-- _(fill in the ones you actually hit: e.g. credential encryption at rest, concurrent-session handling, background job for validation, pagination of items, structured logging/observability)_
-
-For each of the above I noted _why_ it was safe to skip inside a 4–6 hour budget rather than
-silently omitting it.
 
 ---
 
 ## With another day
 
-_(3–5 concrete items, in priority order. This shows you know what "done" would look like.)_
-
 1. A `GET /sessions/{id}/validation-log` (or embed the last N in `GET /sessions/{id}`) endpoint plus
    a small UI panel — the data already exists in `validation_log`, this is a read path away.
-2.
-3.
+2. Credential encryption at rest, plus a real auth layer to protect it behind — neither makes sense
+   to add in isolation.
+3. A background job for validation instead of a synchronous request/response — today the partner's
+   request blocks on the Provider call (bounded by `PROVIDER_TIMEOUT_SECONDS`); a queue would let
+   the UI poll and free the request thread, which matters once the Provider is a real third party
+   instead of an in-process mock.
 
 ---
 
-## Tests
+## Local-only references
 
-```bash
-cd backend && pytest              # requires partner_onboarding_test DB, see step 1 above
-cd frontend && npx playwright test  # happy path + resume-after-reload
-```
+Three files shaped this build but aren't in the repo — all gitignored, none are among BRIEF's
+listed deliverables:
 
-**Current state (Phase 1):** `backend/tests/test_schema.py` — 6 tests against a real Postgres DB
-covering DB-level defaults and constraints (CHECK on `status`/`outcome`, `UNIQUE` on `partner_id`
-and `(session_id, external_id)`, cascade delete). State machine transitions, idempotency, and
-Provider failure-mode tests land in Phase 2/5 once `state_machine.py` and the routes exist — this
-line will be updated as they're added rather than left describing tests that don't exist yet.
-
-What the full suite is covered and why once complete:
-
-- **State machine** — legal transitions succeed, illegal ones return `409`.
-- **Idempotency** — submitting a step twice and calling go-live twice do not duplicate or corrupt.
-- **Provider failure modes** — all four outcomes, including that `unavailable` leaves the session retryable.
-- **Consistency** — a failure mid go-live leaves no partial state.
-- **E2E** — full flow, and a mid-flow reload that resumes at the correct step.
-
-Coverage was not a goal; these are the behaviours the design depends on.
+- **`BRIEF.md`** — the original assignment. Kept local as the source of truth for "what's actually
+  required," cross-checked against at the end of every phase.
+- **`GUIA-ARRANQUE.md`** — my own phase-by-phase execution plan, written before any code, that
+  `CLAUDE.md`'s branch-per-phase workflow was built around.
+- **`design_handoff_partner_onboarding/`** — a Claude-generated design reference (the "Industry"
+  design system: CSS tokens + an HTML mockup) used to guide the frontend's visual styling. Not
+  committed since visual polish is explicitly out of scope, but it's why the UI is more considered
+  than a bare functional pass.
 
 ---
 
 ## AI usage
 
-Claude Code was used throughout. See [`AI_LOG.md`](./AI_LOG.md) for the curated decision log and
-[`ai-log/`](./ai-log) for the raw session transcripts.
+Claude Code was used throughout: options with trade-offs → choose and state why → implement →
+adversarial review → reproduce bugs with a test before fixing them. Start at
+[`AI_LOG.md`](./AI_LOG.md) — the curated index, caught-mistakes list, and reflection.
+[`ai-log/`](./ai-log) has the full per-phase decision logs it links to:
+
+| File | Phase |
+|---|---|
+| [`01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract |
+| [`02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions |
+| [`03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states |
+| [`04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e |
+| [`prompts.md`](./ai-log/prompts.md) | Recurring review prompts used on backend code |

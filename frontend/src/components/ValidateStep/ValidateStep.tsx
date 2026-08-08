@@ -52,12 +52,12 @@ export function ValidateStep({ session }: Props) {
         {showCompanyFields && (
           <div className="field-row">
             <div className="field">
-              <label>{COMPANY_NAME_LABEL}</label>
-              <input className="input" value={session.companyName ?? ""} disabled />
+              <label htmlFor="validate-company">{COMPANY_NAME_LABEL}</label>
+              <input id="validate-company" className="input" value={session.companyName ?? ""} disabled />
             </div>
             <div className="field">
-              <label>{ACCOUNT_ID_LABEL}</label>
-              <input className="input" value={session.accountId ?? ""} disabled />
+              <label htmlFor="validate-account">{ACCOUNT_ID_LABEL}</label>
+              <input id="validate-account" className="input" value={session.accountId ?? ""} disabled />
             </div>
           </div>
         )}
