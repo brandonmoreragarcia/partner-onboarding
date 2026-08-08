@@ -33,7 +33,7 @@ and log together.
 | 01 | [`ai-log/01-design.md`](./ai-log/01-design.md) | Schema, state machine, API contract | 7 decisions (D1–D7), all schema/migration/package layout — see file |
 | 02 | [`ai-log/02-backend.md`](./ai-log/02-backend.md) | Endpoints, Provider client, transactions | D9-D11 (code review pass), a reviewed-not-buggy concurrency question, and 30 new automated tests — see file |
 | 03 | [`ai-log/03-frontend.md`](./ai-log/03-frontend.md) | Wizard, resume, validation states, design handoff, code review | D12-D17, a CORS bug caught only by opening a real browser, a schema fix (ErrorResponse), and the first Playwright e2e test — see file |
-| 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | _(not started)_ |
+| 04 | [`ai-log/04-tests.md`](./ai-log/04-tests.md) | Backend tests + e2e | D18-D19, a Playwright parallelism gotcha, and a real label-association bug caught by a failing test — see file |
 
 ---
 
@@ -103,7 +103,16 @@ intuition alone:
 
 ## Reflection
 
-> 3–6 sentences, written at the end. What the AI was genuinely good at, where it needed steering,
-> what I would do differently next time, and how I decided when to trust it.
-
-_(fill in)_
+The AI was strongest at exactly the things I couldn't easily eyeball myself: proving a concurrency
+claim with two real threads instead of arguing about it on paper, and — right at the end — actually
+simulating a fresh machine (clean venv, clean `node_modules`, empty DB) instead of trusting that
+`tsc` passing meant the project would run for someone else. That last check caught a real
+`npm install` failure nobody would have found by reading code. It needed the most steering on the
+frontend, where I have my own opinions — component structure, hooks-only logic, enums over string
+unions — and it took two explicit review passes before those conventions were actually applied
+everywhere instead of just the newest files. Next time I'd ask for the fresh-machine check much
+earlier, not as a last step before wrapping up, since it would have caught the `.npmrc` gap the same
+day it was introduced instead of at the very end. I trusted the AI's backend reasoning once it
+started showing me the actual failure case (the race, the crash window) rather than asserting
+"this is safe" — and I stopped trusting any claim, backend or frontend, that wasn't backed by a
+curl output, a passing test, or a real browser screenshot.

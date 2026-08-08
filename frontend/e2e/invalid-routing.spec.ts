@@ -1,16 +1,9 @@
-import { execSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
+import { resetDb } from "./reset-db";
 
 // Requires the backend running separately on :8000 against the real Postgres dev DB
 // (see README "Running it locally") -- Playwright's webServer only manages the
 // frontend dev server, not the API.
-
-function resetDb() {
-  execSync(
-    `PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH" psql -d partner_onboarding -c "DELETE FROM sessions;"`,
-    { stdio: "ignore" }
-  );
-}
 
 test.beforeEach(() => {
   resetDb(); // only one session exists (hardcoded partner) -- must reset between tests

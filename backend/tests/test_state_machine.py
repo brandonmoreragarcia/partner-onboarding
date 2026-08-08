@@ -185,6 +185,25 @@ def test_go_live_is_idempotent_no_duplicate_write(db):
     assert first.updated_at == second.updated_at  # proves the 2nd call performed no write
 
 
+def test_go_live_failed_commit_leaves_no_partial_state(db, monkeypatch):
+    """go_live is a single atomic UPDATE -- there's no multi-write sequence to fail
+    partway through. This instead proves that if the commit itself fails, nothing gets
+    persisted: the session is left at VALIDATED, not some in-between state."""
+    session = _make_session(db, SessionStatus.VALIDATED)
+
+    def failing_commit():
+        raise RuntimeError("simulated commit failure")
+
+    monkeypatch.setattr(db, "commit", failing_commit)
+
+    with pytest.raises(RuntimeError):
+        state_machine.go_live(db, session.id)
+
+    db.rollback()
+    reloaded = state_machine._get_or_404(db, session.id)
+    assert reloaded.status == SessionStatus.VALIDATED
+
+
 # --- true concurrency: two independent DB sessions, not the shared per-test fixture ---
 
 
