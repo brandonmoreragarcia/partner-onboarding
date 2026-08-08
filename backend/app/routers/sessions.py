@@ -12,9 +12,12 @@ from app.database import SessionLocal, get_db
 from app.exceptions import NotFoundError
 from app.models import SessionRow
 from app.provider_client import provider_client
-from app.schemas import DetailsIn, SessionOut
+from app.schemas import DetailsIn, ErrorResponse, SessionOut
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
+
+_NOT_FOUND = {404: {"model": ErrorResponse}}
+_NOT_FOUND_OR_INVALID_STATE = {404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}}
 
 
 @router.post("", response_model=SessionOut)
@@ -35,7 +38,7 @@ def create_or_resume_session(response: Response, db: DBSession = Depends(get_db)
     ).scalar_one()
 
 
-@router.get("/{session_id}", response_model=SessionOut)
+@router.get("/{session_id}", response_model=SessionOut, responses=_NOT_FOUND)
 def get_session(session_id: uuid.UUID, db: DBSession = Depends(get_db)) -> SessionRow:
     session = db.execute(
         select(SessionRow).where(SessionRow.id == session_id).options(selectinload(SessionRow.items))
@@ -45,12 +48,12 @@ def get_session(session_id: uuid.UUID, db: DBSession = Depends(get_db)) -> Sessi
     return session
 
 
-@router.post("/{session_id}/details", response_model=SessionOut)
+@router.post("/{session_id}/details", response_model=SessionOut, responses=_NOT_FOUND_OR_INVALID_STATE)
 def submit_details(session_id: uuid.UUID, payload: DetailsIn, db: DBSession = Depends(get_db)) -> SessionRow:
     return state_machine.submit_details(db, session_id, payload)
 
 
-@router.post("/{session_id}/validate", response_model=SessionOut)
+@router.post("/{session_id}/validate", response_model=SessionOut, responses=_NOT_FOUND_OR_INVALID_STATE)
 def trigger_validation(session_id: uuid.UUID) -> SessionRow:
     # Deliberately not Depends(get_db): this is the one route that opens two separate,
     # short-lived DB sessions with the Provider call between them holding no DB connection
@@ -67,6 +70,6 @@ def trigger_validation(session_id: uuid.UUID) -> SessionRow:
         return state_machine.apply_validation_result(db2, session_id, result)
 
 
-@router.post("/{session_id}/go-live", response_model=SessionOut)
+@router.post("/{session_id}/go-live", response_model=SessionOut, responses=_NOT_FOUND_OR_INVALID_STATE)
 def go_live(session_id: uuid.UUID, db: DBSession = Depends(get_db)) -> SessionRow:
     return state_machine.go_live(db, session_id)

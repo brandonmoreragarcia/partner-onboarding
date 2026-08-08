@@ -1,6 +1,7 @@
 # local reference, not a deliverable
 BRIEF.md
 GUIA-ARRANQUE.md
+design_handoff_partner_onboarding/
 
 .venv/
 __pycache__/
@@ -11,3 +12,4 @@ dist/
 .playwright/
 test-results/
 playwright-report/
+.DS_Store

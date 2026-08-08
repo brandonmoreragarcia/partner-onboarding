@@ -1,0 +1,11 @@
+export const HEADING_TEXT = "Company details";
+export const INSTRUCTION_TEXT = "Enter your company and Provider credentials to begin validation.";
+export const INVALID_BANNER_TITLE = "Validation failed";
+export const COMPANY_NAME_LABEL = "Company name";
+export const COMPANY_NAME_PLACEHOLDER = "e.g. Acme Robotics";
+export const ACCOUNT_ID_LABEL = "Account ID";
+export const ACCOUNT_ID_PLACEHOLDER = "e.g. acct_8841";
+export const API_KEY_LABEL = "API key";
+export const API_KEY_PLACEHOLDER = "Paste your Provider API key";
+export const LABEL_CONTINUE = "Continue";
+export const LABEL_SAVING = "Saving…";
