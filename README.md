@@ -46,12 +46,15 @@ createdb partner_onboarding_test    # used by the backend test suite, see Tests 
 
 ```bash
 cd backend
-cp .env.example .env          # adjust DATABASE_URL if needed
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 alembic upgrade head
 uvicorn app.main:app --reload  # http://localhost:8000
 ```
+
+No `.env` file needed to get running — `app/config.py`'s defaults already match a local Postgres on
+its default port with the DB name from step 1. `.env.example` exists only if you want to point at
+something else; copy it to `.env` and edit it.
 
 **3. Frontend**
 
@@ -61,6 +64,8 @@ npm install
 npm run dev                    # http://localhost:5173
 ```
 
+Same story — no `.env` needed; it defaults to talking to the backend at `http://localhost:8000`.
+
 ## Tests
 
 ```bash
@@ -69,14 +74,14 @@ cd frontend && npx playwright test  # requires the backend running separately on
 ```
 
 
-**Environment variables**
+**Environment variables** (all optional overrides — every default below already works out of the box)
 
-| Variable | Where | Default | Purpose |
+| Variable | Set in | Default | Purpose |
 |---|---|---|---|
 | `DATABASE_URL` | `backend/.env` | `postgresql+psycopg://localhost/partner_onboarding` | Postgres connection (`+psycopg` selects psycopg3, matching `requirements.txt`) |
 | `PROVIDER_TIMEOUT_SECONDS` | `backend/.env` | `5` | Timeout for the Provider call |
 | `PARTNER_ID` | `backend/.env` | `demo-partner` | Hardcoded identity (auth is out of scope) |
-| `VITE_API_BASE_URL` | `frontend/.env` (optional) | `http://localhost:8000` | Only needed if the backend isn't on the default host/port |
+| `VITE_API_BASE_URL` | `frontend/.env` | `http://localhost:8000` | Only needed if the backend isn't on the default host/port |
 
 ---
 
